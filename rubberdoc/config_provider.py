@@ -1,8 +1,39 @@
+"""
+# Config Provider
+
+A simple configuration file handler for RubberDoc.  
+
+Default configurations are inititally provided, then overwritten with any 
+custom configurations provided by the user. The default configuration looks like this:  
+
+`default_config.json`  
+```
+{
+    "input": {
+        "include": [
+            "\\.py$",
+            "\\.md$"
+        ],
+        "exclude": [
+            
+        ]
+    },
+    "output": {
+        "custom_doc_handler_filepath": "",
+        "custom_doc_handler_class_name": "",
+        "no_docstring_default": "_No docstring_",
+        "include_source_code": true,
+        "rename": {
+            "__init__": "index"
+        }
+    }
+}
+```
+"""
 import json
 from pathlib import Path
 
 class RubberDocConfig:
-
     def __init__(self, path_to_config: str or None = None):
         self.input = dict() 
         self.output = dict()

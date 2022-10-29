@@ -1,9 +1,12 @@
 """
-The DocHandler processes a single python file into a page for your documentation.
+# Doc Handlers
+
+A DocHandler processes a single python file into a page for your documentation.
 """
 import ast
 import importlib.util
 import sys
+import docstring_parser
 
 from rubberdoc.config_provider import RubberDocConfig
 
@@ -12,8 +15,14 @@ from rubberdoc.config_provider import RubberDocConfig
 class BaseDocHandler:
     """BaseDocHandler contains core functionality for converting python files to markdown.  
 
-    Methods beginning with 'wrap_' can be overridden to create a custom DocHandler, similar
-    to how the MaterialMKDocHandler does so.
+    It contains `get_`ers, `wrap_`ers, and a `process_`er.  
+
+    The `get_`ers are a set of conveniences to get information about a node.  
+
+    The `wrap_`ers wrap each component of a node and are built to be overriden for customization.  
+
+    The `process_`er (specifically, `process_node`) determines the order of processed components of a node.
+    This may also be overriden if you desire a different sequence of information, or if you wish to add your own `wrap_`ers.
     """
     def __init__(self, file_path: str, config: RubberDocConfig):
         self.file_path = file_path
@@ -22,7 +31,13 @@ class BaseDocHandler:
         self.code: list = list()
     
     def process(self) -> str:
-        """Processes a file to markdown."""        
+        """Processes a file to markdown.
+
+        This is the main driver called from the generator.
+
+        Returns:
+            str: A document processed to markdown.
+        """   
         with open(self.file_path, 'r') as o:
             if str(self.file_path).endswith('.md'):
                 return o.read()
@@ -33,11 +48,21 @@ class BaseDocHandler:
         return ''.join(self.doc)
     
     def __module_docstring(self, tree):
+        """Places the module-level docstring at the top of the document.
+
+        Args:
+            tree: The root of the Abstract Syntax Tree
+        """
         module_docstring = ast.get_docstring(tree)
         if module_docstring:
             self.doc.append(module_docstring + '  \n')
     
     def __walk_tree(self, tree):
+        """Walks the Abstract Syntax Tree and calls `process_node` for each function or class `node`.
+
+        Args:
+            tree: The root of the Abstract Syntax Tree
+        """
         for node in tree.body:
             level = 1
             if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
@@ -49,13 +74,14 @@ class BaseDocHandler:
                             self.process_node(level, child, node)
     
     def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
-        """ Processes a function or class **node** into markdown and appends to doc.  
+        """Processes a function or class `node` into markdown and appends to doc.  
 
         This function can be overriden to determine the order of parsed elements of the node. 
-        __params__  
-        - `level` _int_  level for indentation purposes  
-        - `node` _ast.ClassDef | ast.FunctionDef_ the current node to be processed  
-        - `parent` _ast.ClassDef | None_ the parent class if a function node  
+
+        Args:
+            level (int): level for indentation purposes  
+            node (ast.ClassDef | ast.FunctionDef): the current node to be processed 
+            parent (ast.ClassDef, optional): the parent class if a function node. Defaults to None.
         """
         if parent:
             self.doc.append(self.wrap_func_cls_lbl(parent.name))
@@ -64,27 +90,38 @@ class BaseDocHandler:
         self.doc.append(self.wrap_func_cls_name(level, node))
         
         
-        docstring = self.get_docstring(node)
-        source_code = self.get_node_code(node)
+        docstring = self.get_parsed_docstring(node)
+        self.doc.append(self.wrap_parsed_docstring(docstring))
         
-        self.doc.append(self.wrap_docstring(docstring))
         if self.config.output['include_source_code']:
+            source_code = self.get_node_code(node)
             self.doc.append(self.wrap_codeblock(source_code))
     
-    def get_docstring(self, node: ast.ClassDef | ast.FunctionDef) -> str:
-        """Returns the docstring of the class or function **node**.  
+    def get_full_docstring(self, node: ast.ClassDef | ast.FunctionDef) -> str:
+        """Returns the docstring of the class or function `node`.  
         
         If no docstring is found in the node, a default is returned. 
         This default can be set in the configuration file
         """
         return ast.get_docstring(node) or self.config.output['no_docstring_default']
-    
+
     def get_node_code(self, node: ast.ClassDef | ast.FunctionDef) -> str:
-        """Returns the codeblock of the class or function **node**."""
+        """Returns the codeblock of the class or function `node`."""
         return ast.get_source_segment(self.source_code, node)
     
+    def get_parsed_docstring(self, node: ast.ClassDef | ast.FunctionDef) -> docstring_parser.Docstring:
+        """Parses a `node`'s docstring with `docstring_parser`.
+
+        Args:
+            node (ast.ClassDef | ast.FunctionDef): Node from the `ast` tree
+
+        Returns:
+            Docstring: a docstring object 
+        """
+        return docstring_parser.parse(self.get_full_docstring(node))
+    
     def get_function_params(self, node: ast.FunctionDef) -> list[str]:
-        """Returns a list of parameters for the function **node**.  
+        """Returns a list of parameters for the function `node`.  
 
         I would like to have this show the parameter types, but couldn't figure
         out how to do so. If you figure it out - please let me know!        
@@ -101,6 +138,12 @@ class BaseDocHandler:
         return parent_name + '  \n'
     
     def wrap_func_cls_name(self, level: int, node: ast.ClassDef | ast.FunctionDef) -> str:
+        """Wraps the function or class `node`'s name.  
+
+        Args:
+            level (int): The indentation level.
+            node (ast.ClassDef | ast.FunctionDef): The node for parsing.
+        """
         # avoid markdown collisions with dunder methods
         node_name = node.name
         if node_name.startswith('_') and node_name.endswith('_'):
@@ -118,37 +161,93 @@ class BaseDocHandler:
                 f"{node_name}{inherits}  \n")
     
     def wrap_docstring(self, docstring: str) -> str:
-        """Wraps the provided docstring for markdown.  
-        
-        If you are using RubberDoc generation from a python script,
-        you could subclass the DocHandler and override this method to your
-        preferred style.
-        """
+        """Wraps the provided docstring for markdown."""
         return docstring + "  \n"
     
     def wrap_codeblock(self, code: str) -> str:
-        """Wraps the provided codeblock for markdown.  
-        
-        If you are using RubberDoc generation from a python script,
-        you could subclass the DocHandler and augment this method to your
-        preferred style.
-        """
+        """Wraps the provided codeblock for markdown."""
         c = '```\n'
         c += code
         c += '\n```\n'
         return c
     
+    def wrap_parsed_docstring(self, docstring: docstring_parser.Docstring) -> str:
+        """Wraps the provided parsed docstring.
+        
+        The parsed docstring object is parsed by the `docstring_parser` library.
+        The nice part about this object is that it allows the author of the docstring 
+        to adhere to whichever docstring standard they prefer and additionally supply any markdown 
+        in the description.
 
-class MaterialMKDocHandler(BaseDocHandler):
-    """Documentation generated centered towards Material theme for MKDocs.  
+        Args:
+            docstring: Docstring object from docstring_parser library
+        
+        Returns:
+            str: A string of the prepared docstring ready for being appended to the markdown doc.
+        """
+        docstring_builder = str()
+        if docstring.short_description:
+            docstring_builder += docstring.short_description + '  \n\n'
+        if docstring.long_description:
+            docstring_builder += docstring.long_description + '  \n'
+        if docstring.params:
+            params = self.wrap_docstring_params(docstring.params)
+            docstring_builder += params
+        if docstring.returns:
+            returns = self.wrap_docstring_returns(docstring.returns)
+            docstring_builder += returns
+        return docstring_builder
     
-    This is the preferred generator for RubberDoc. 
-    If you run the generator from the commandline, this theme is used by default.
-    It expects that you have a few additions into the mkdocs.yml file:  
+    def wrap_docstring_params(self, params: list[docstring_parser.DocstringParam]) -> str:
+        params_builder = "\n**Parameters:**  \n"
+        for param in params:
+            ps = str("- ")
+            if param.arg_name:
+                ps += f"`{param.arg_name}` "
+            if param.is_optional:
+                ps += f"(optional) "
+            if param.type_name and not param.description:
+                ps += f"{param.type_name} "
+            if param.type_name and param.description:
+                ps += f"_{param.type_name}_ "
+            if param.description:
+                ps += f"{param.description} "
+            # if param.default:
+            #     ps += f"__default__: {param.default} "
+            
+            ps += '  \n'
+            params_builder += ps
+        return params_builder
+    
+    def wrap_docstring_returns(self, returns: docstring_parser.DocstringReturns) -> str:
+        returns_builder = "\n**Returns:**  \n"
+        if returns.type_name:
+            returns_builder += f"_{returns.type_name}_ "
+        if returns.description:
+            returns_builder += f"{returns.description}"
+        returns_builder += "  \n"
+        return returns_builder
+
+    
+
+class MaterialMKDocsHandler(BaseDocHandler):
+    """A spin on the BaseDocHandler centered towards MKDocs 'Material' theme.  
+
+    This can be used in commandline generation like so:  
+    `rubberdoc generate --style material`  
+
+    Note that this expects the following minimal additions to your `mkdocs.yml` file:  
+
     ```
+    theme: material
     markdown_extensions:
-        - pymdownx.tabbed:
-            alternate_style: true
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.inlinehilite
+    - pymdownx.snippets
+    - pymdownx.superfences
+    - pymdownx.tabbed:
+        alternate_style: true 
     ```
     """
     def __init__(self, file_path: str, config: RubberDocConfig):
@@ -161,23 +260,16 @@ class MaterialMKDocHandler(BaseDocHandler):
         # function or class name
         self.doc.append(self.wrap_func_cls_name(level, node))
         
-        if isinstance(node, ast.FunctionDef):
-            self.doc.append(self.wrap_function_params(node))
-        
-        docstring = self.get_docstring(node)
-        source_code = self.get_node_code(node)
-        
+        docstring = self.wrap_parsed_docstring(
+            self.get_parsed_docstring(node))
         self.doc.append(self.wrap_docstring(docstring))
+        
         if self.config.output['include_source_code']:
+            source_code = self.get_node_code(node)
             self.doc.append(self.wrap_codeblock(source_code))
+
         self.doc.append('\n---  \n')
-    
-    def wrap_function_params(self, node: ast.FunctionDef) -> str:
-        params = self.get_function_params(node) or ''
-        if params:
-            params = f"**Params:** `{', '.join(params)}`  \n"
-        return params
-    
+            
     def wrap_func_cls_lbl(self, parent_name: str):
         return f"<label class='class-label'>{parent_name}</label>  \n"
     
@@ -220,7 +312,7 @@ def doc_handler_selection(config: RubberDocConfig, style: str) -> BaseDocHandler
         spec.loader.exec_module(foo)
         handler = getattr(foo, cust_cls, None)
     elif style.lower() == 'material':
-        handler = MaterialMKDocHandler
+        handler = MaterialMKDocsHandler
     elif style.lower() == 'default':
         handler = BaseDocHandler
     return handler

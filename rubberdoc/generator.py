@@ -1,3 +1,9 @@
+"""
+Generates the documentation by walking through the provided directory, 
+determining if the file is to be processed (according to the configuration), 
+passing the file to the provided DocHandler, 
+and saving the returned contents to the output_directory.
+"""
 import os
 from pathlib import Path
 import re
@@ -6,22 +12,17 @@ from rubberdoc.config_provider import RubberDocConfig
 from rubberdoc.doc_handler import BaseDocHandler
 
 
-
 class RubberDoc:
-    """The helpful Rubber Duck that listens and writes!  
-
-    We will put more information here as we go. For now, let's just leave it be.
-    """
     def __init__(self, config: RubberDocConfig, doc_handler: BaseDocHandler):
         self.config: RubberDocConfig = config
         self.doc_handler: BaseDocHandler = doc_handler
 
     def generate(self, input_directory: str, output_directory: str):
-        """Generates documentation from docstrings in the provided directory.  
-        
-        **params**:  
-        - input_directory: _str_ the path to the directory for generating code  
-        - output_directory: _str_ the path to the directory for the generated documents  
+        """Generates documentation from the `input_directory` to the `output_directory`.
+
+        Args:
+            input_directory (str): the path to the package 
+            output_directory (str): the path to the directory for the generated documents
         """
         self.__clean_mds(output_directory)
         for (dirpath, _, filenames) in os.walk(input_directory):          
@@ -53,9 +54,13 @@ class RubberDoc:
                 pass
     
     def __wants_to_write(self, file_path: str) -> bool:
-        """checks config to determine if this file should be written.  
-        
-        **returns** __bool__
+        """Checks config to determine if this file should be written. 
+
+        Args:
+            file_path (str): the path to the file in question
+
+        Returns:
+            bool: whether to write the file or not
         """
         write_it = False
         for inc in self.config.input['include']:

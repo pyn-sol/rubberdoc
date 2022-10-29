@@ -14,7 +14,7 @@
         "no_docstring_default": "_No docstring_",
         "include_source_code": true,
         "rename": {
-            "__init__": "about"
+            "__init__": "index"
         }
     }
 }

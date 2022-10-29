@@ -1,6 +1,6 @@
 from rubberdoc.generator import RubberDoc 
 from rubberdoc.config_provider import RubberDocConfig
-from rubberdoc.doc_handler import MaterialMKDocHandler, BaseDocHandler
+from rubberdoc.doc_handler import BaseDocHandler
 
 class MyDocHandler(BaseDocHandler):
     """Custom DocHandler"""
@@ -18,7 +18,7 @@ default_config = RubberDocConfig(path_to_config=None)
 
 rd = RubberDoc(
     config=default_config,
-    doc_handler=MaterialMKDocHandler)
+    doc_handler=MyDocHandler)
 
 rd.generate(
     input_directory=r"../rubberdoc/rubberdoc", 
