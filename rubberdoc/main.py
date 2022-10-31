@@ -47,7 +47,7 @@ def generate(from_dir: str or None = None,
     rd_config = RubberDocConfig(path_to_config=config)
     doc_handler_cls = doc_handler_selection(rd_config, style)
     if doc_handler_cls:
-        typer.secho(f"Using {doc_handler_cls.__name__} for generation.", fg='green')
+        typer.echo(f"\nUsing {doc_handler_cls.__name__} for generation.\n")
         rd = RubberDoc(config=rd_config, doc_handler=doc_handler_cls)
         rd.generate(
             input_directory=from_dir or os.curdir, 

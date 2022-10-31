@@ -1,5 +1,5 @@
 """
-# About this Test Package
+# Test Package
 
 __work in progress to create a test package__  
 
