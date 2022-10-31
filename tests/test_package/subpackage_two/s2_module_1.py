@@ -12,12 +12,15 @@ class TestObject:
     def __init__(self):
         pass 
 
-    def function_one(self, input: str):
+    def function_one(self, input: str) -> str:
         """Does a thing with the stuff.
 
         This function does stuff with the input.
 
         Args:
-            input (str): _description_
+            input (str): any string is fine...
+        Returns:
+            str: Returns the `input` unaltered
         """
         print(input)
+        return input
