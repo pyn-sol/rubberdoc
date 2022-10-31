@@ -9,4 +9,4 @@ Feel free to update the configuration file to set other aliases that are project
 
 Happy Documenting!
 """
-__version__ = '0.2.0'
+__version__ = '0.2.1'
