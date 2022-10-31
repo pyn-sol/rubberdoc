@@ -11,6 +11,23 @@ import docstring_parser
 from rubberdoc.config_provider import RubberDocConfig
 
 
+class DocstringCoverage:
+    """An object supporting Docstring Coverage.
+
+    Attributes:
+        docstring_potential (int): the number of docstring locations searched
+        docstrings_found (int): the number of docstrings found
+    """
+    def __init__(self):
+        self.docstring_potential: int = 0
+        self.docstrings_found: int = 0
+    
+    def report(self):
+        if not self.docstring_potential:
+            return 'N/A'
+        return (f"{self.docstrings_found} / {self.docstring_potential} "
+                f" ({int(100 * (self.docstrings_found / self.docstring_potential))}%)")
+
 
 class BaseDocHandler:
     """BaseDocHandler contains core functionality for converting python files to markdown.  
@@ -29,6 +46,7 @@ class BaseDocHandler:
         self.config = config
         self.doc: list = list()
         self.code: list = list()
+        self.coverage = DocstringCoverage()
     
     def process(self) -> str:
         """Processes a file to markdown.
@@ -54,8 +72,10 @@ class BaseDocHandler:
             tree: The root of the Abstract Syntax Tree
         """
         module_docstring = ast.get_docstring(tree)
+        self.coverage.docstring_potential += 1
         if module_docstring:
             self.doc.append(module_docstring + '  \n')
+            self.coverage.docstrings_found += 1
     
     def __walk_tree(self, tree):
         """Walks the Abstract Syntax Tree and calls `process_node` for each function or class `node`.
@@ -101,9 +121,16 @@ class BaseDocHandler:
         """Returns the docstring of the class or function `node`.  
         
         If no docstring is found in the node, a default is returned. 
-        This default can be set in the configuration file
+        This default can be set in the configuration file.  
+
+        While attempting to get the docstring of the node, this function 
+        will also contribute to capturing the docstring coverage in the code base.
         """
-        return ast.get_docstring(node) or self.config.output['no_docstring_default']
+        docstring = ast.get_docstring(node)
+        self.coverage.docstring_potential += 1
+        if docstring:
+            self.coverage.docstrings_found += 1
+        return  docstring or self.config.output['no_docstring_default']
 
     def get_node_code(self, node: ast.ClassDef | ast.FunctionDef) -> str:
         """Returns the codeblock of the class or function `node`."""
@@ -199,8 +226,10 @@ class BaseDocHandler:
         return docstring_builder
     
     def wrap_docstring_params(self, params: list[docstring_parser.DocstringParam]) -> str:
-        params_builder = "\n**Parameters:**  \n"
+        params_builder = str()
         for param in params:
+            if not params_builder:
+                params_builder += f"\n**{param.args[0].title()}s:**  \n\n"
             ps = str("- ")
             if param.arg_name:
                 ps += f"`{param.arg_name}` "
@@ -209,23 +238,22 @@ class BaseDocHandler:
             if param.type_name and not param.description:
                 ps += f"{param.type_name} "
             if param.type_name and param.description:
-                ps += f"_{param.type_name}_ "
+                ps += f"(_{param.type_name}_) "
             if param.description:
-                ps += f"{param.description} "
+                ps += f"- {param.description} "
             # if param.default:
             #     ps += f"__default__: {param.default} "
-            
-            ps += '  \n'
+            ps += '  \n\n'
             params_builder += ps
         return params_builder
     
     def wrap_docstring_returns(self, returns: docstring_parser.DocstringReturns) -> str:
-        returns_builder = "\n**Returns:**  \n"
+        returns_builder = "\n**Returns:**  \n\n"
         if returns.type_name:
-            returns_builder += f"_{returns.type_name}_ "
+            returns_builder += f"(_{returns.type_name}_) "
         if returns.description:
             returns_builder += f"{returns.description}"
-        returns_builder += "  \n"
+        returns_builder += "  \n\n"
         return returns_builder
 
     

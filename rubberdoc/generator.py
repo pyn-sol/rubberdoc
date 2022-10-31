@@ -29,19 +29,29 @@ class RubberDoc:
             if '__pycache__' in str(dirpath):
                 continue
             for filename in filenames:
-                if self.__wants_to_write(Path(dirpath, filename)):
+                py_file = Path(dirpath, filename)
+                if self.__wants_to_write(py_file):
                     write_path = (
                         Path(output_directory) 
-                        / Path(dirpath, filename).relative_to(input_directory).parent
+                        / py_file.relative_to(input_directory).parent
                         / self.__rename_file(Path(filename).stem))
-                    print('writing: ', write_path)
                     handler = self.doc_handler(
                         file_path=Path(dirpath) / filename,
                         config=self.config)
                     processed_doc = handler.process()
+                    self.__callback(py_file, write_path, handler.coverage.report())
+                    
                     self.save(
                         to=write_path, 
                         content=processed_doc)
+    
+    @staticmethod
+    def __callback(py_file, write_path, coverage_report):
+        print('File: ', py_file)
+        print('Destination: ', write_path)
+        init_file = str(py_file).endswith('__init__.py')
+        print('Docstring Coverage: ', 'N/A' if init_file else coverage_report)
+        print()
 
     def __clean_mds(self, out_dir: str):
         for (dirpath, _, filenames) in os.walk(out_dir):
