@@ -56,7 +56,7 @@ class RubberDoc:
     def __clean_mds(self, out_dir: str):
         for (dirpath, _, filenames) in os.walk(out_dir):
             for file in filenames:
-                if file.endswith('.md'):
+                if file.endswith(self.doc_handler.save_filetype()):
                     os.remove(Path(dirpath, file))
             try:
                 os.rmdir(dirpath)
@@ -89,4 +89,4 @@ class RubberDoc:
     def __rename_file(self, filename):
         rn = self.config.output['rename']
         fn = rn.get(filename, filename)
-        return fn + '.md'
+        return fn + self.doc_handler.save_filetype()

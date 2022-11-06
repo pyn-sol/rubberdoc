@@ -48,6 +48,10 @@ class BaseDocHandler:
         self.code: list = list()
         self.coverage = DocstringCoverage()
     
+    @classmethod
+    def save_filetype(cls):
+        return ".md"
+    
     def process(self) -> str:
         """Processes a file to markdown.
 
@@ -328,6 +332,66 @@ class MaterialMKDocsHandler(BaseDocHandler):
         return c
 
 
+class DocusaurusDocsHandler(BaseDocHandler):
+    """A spin on the BaseDocHandler centered towards Docusaurus.  
+
+    This can be used in commandline generation like so:  
+    `rubberdoc generate --style docusaurus`  
+    """
+    def __init__(self, file_path: str, config: RubberDocConfig):
+        super().__init__(file_path=file_path, config=config)
+        self.__import_tabs()
+    
+    @classmethod
+    def save_filetype(cls):
+        return ".mdx"
+    
+    def __import_tabs(self):
+        self.doc.append("import Tabs from '@theme/Tabs';\n")
+        self.doc.append("import TabItem from '@theme/TabItem';\n\n")
+    
+    def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
+        
+        # function or class name
+        self.doc.append('\n' + self.wrap_func_cls_name(level, node))
+        self.doc.append('\n<Tabs>\n')
+        docstring = self.wrap_parsed_docstring(
+            self.get_parsed_docstring(node))
+        self.doc.append(self.wrap_docstring(docstring))
+        
+        if self.config.output['include_source_code']:
+            source_code = self.get_node_code(node)
+            self.doc.append(self.wrap_codeblock(source_code))
+        self.doc.append('\n</Tabs>\n')
+                
+    def wrap_docstring(self, docstring: str) -> str:
+        """Wraps the provided docstring for markdown.  
+        
+        If you are using RubberDoc generation from a python script,
+        you could subclass the DocHandler and augment this method to your
+        preferred style.
+        """
+        d = '<TabItem value="description" label="Description" default>\n\n'        
+        d += docstring
+        d += "</TabItem>\n"
+        return d
+    
+    def wrap_codeblock(self, code: str) -> str:
+        """Wraps the provided codeblock for markdown.  
+        
+        If you are using RubberDoc generation from a python script,
+        you could subclass the DocHandler and augment this method to your
+        preferred style.
+        """
+        c = '<TabItem value="code" label="Code" default>\n\n'
+        c += '```python\n'
+        c += code
+        c += '\n```\n'
+        c += "\n</TabItem>\n\n"
+        return c
+    
+
+
 def doc_handler_selection(config: RubberDocConfig, style: str) -> BaseDocHandler | None:
     """Determines the DocHandler to provide given a `RubberDocConfig` and `style`"""
     cust_fp = config.output['custom_doc_handler_filepath']
@@ -341,6 +405,8 @@ def doc_handler_selection(config: RubberDocConfig, style: str) -> BaseDocHandler
         handler = getattr(foo, cust_cls, None)
     elif style.lower() == 'material':
         handler = MaterialMKDocsHandler
+    elif style.lower() == 'docusaurus':
+        handler = DocusaurusDocsHandler
     elif style.lower() == 'default':
         handler = BaseDocHandler
     return handler
