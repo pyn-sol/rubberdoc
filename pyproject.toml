@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "rubberdoc"
-version = "0.2.2"
+version = "0.2.3"
 description = ""
-authors = ["Mbeebe <grow.food.everywhere@gmail.com>"]
+authors = ["Mbeebe <pyn-sol@beebe.dev>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
@@ -12,6 +12,7 @@ rubberdoc = "rubberdoc.main:app"
 python = "^3.10"
 typer = {extras = ["all"], version = "^0.6.1"}
 docstring-parser = "^0.15"
+inline-example = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

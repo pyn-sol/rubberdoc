@@ -21,5 +21,5 @@ rd = RubberDoc(
     doc_handler=MyDocHandler)
 
 rd.generate(
-    input_directory=r"../rubberdoc/rubberdoc", 
-    output_directory=r"../rubberdoc/docs/docs/reference")
+    input_directory=r"path/to/package", 
+    output_directory=r"path/to/documentation")
