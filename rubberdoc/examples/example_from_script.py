@@ -4,8 +4,8 @@ from rubberdoc.doc_handler import BaseDocHandler
 
 class MyDocHandler(BaseDocHandler):
     """Custom DocHandler"""
-    def __init__(self, file_path: str, config: RubberDocConfig):
-        super().__init__(file_path, config)
+    def __init__(self, file_or_path: str, config: RubberDocConfig):
+        super().__init__(file_or_path, config)
     
     def wrap_codeblock(self, code: str) -> str:
         """Override the `wrap_codeblock` method to return nothing"""

@@ -23,8 +23,8 @@ class CustomDocHandler(BaseDocHandler):
         alternate_style: true 
     ```
     """
-    def __init__(self, file_path: str, config: RubberDocConfig):
-        super().__init__(file_path=file_path, config=config)
+    def __init__(self, file_or_path: str, config: RubberDocConfig):
+        super().__init__(file_or_path=file_or_path, config=config)
     
     def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
         """Override the `process_node` method with our own implementation.  

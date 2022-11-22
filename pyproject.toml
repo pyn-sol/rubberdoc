@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rubberdoc"
-version = "0.2.3"
+version = "0.2.4"
 description = ""
 authors = ["Mbeebe <pyn-sol@beebe.dev>"]
 readme = "README.md"
@@ -9,7 +9,7 @@ readme = "README.md"
 rubberdoc = "rubberdoc.main:app"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.8"
 typer = {extras = ["all"], version = "^0.6.1"}
 docstring-parser = "^0.15"
 inline-example = "^0.1.0"

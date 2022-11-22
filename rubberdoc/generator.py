@@ -36,7 +36,7 @@ class RubberDoc:
                         / py_file.relative_to(input_directory).parent
                         / self.__rename_file(Path(filename).stem))
                     handler = self.doc_handler(
-                        file_path=Path(dirpath) / filename,
+                        file_or_path=Path(dirpath) / filename,
                         config=self.config)
                     processed_doc = handler.process()
                     self.__callback(py_file, write_path, handler.coverage.report())

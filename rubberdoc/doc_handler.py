@@ -5,6 +5,7 @@ A DocHandler processes a single python file into a page for your documentation.
 """
 import ast
 import importlib.util
+import os
 import sys
 import docstring_parser
 
@@ -41,8 +42,8 @@ class BaseDocHandler:
     The `process_`er (specifically, `process_node`) determines the order of processed components of a node.
     This may also be overriden if you desire a different sequence of information, or if you wish to add your own `wrap_`ers.
     """
-    def __init__(self, file_path: str, config: RubberDocConfig):
-        self.file_path = file_path
+    def __init__(self, file_or_path: str, config: RubberDocConfig):
+        self.file_or_path = file_or_path
         self.config = config
         self.doc: list = list()
         self.code: list = list()
@@ -60,10 +61,13 @@ class BaseDocHandler:
         Returns:
             str: A document processed to markdown.
         """   
-        with open(self.file_path, 'r') as o:
-            if str(self.file_path).endswith('.md'):
-                return o.read()
-            self.source_code = o.read()
+        if os.path.exists(self.file_or_path):
+            with open(self.file_or_path, 'r') as o:
+                if str(self.file_or_path).endswith('.md'):
+                    return o.read()
+                self.source_code = o.read()
+        else:
+            self.source_code = self.file_or_path
             tree = ast.parse(self.source_code)
             self.__module_docstring(tree)
             self.__walk_tree(tree)
@@ -282,8 +286,8 @@ class MaterialMKDocsHandler(BaseDocHandler):
         alternate_style: true 
     ```
     """
-    def __init__(self, file_path: str, config: RubberDocConfig):
-        super().__init__(file_path=file_path, config=config)
+    def __init__(self, file_or_path: str, config: RubberDocConfig):
+        super().__init__(file_or_path=file_or_path, config=config)
     
     def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
         if parent:
@@ -338,8 +342,8 @@ class DocusaurusDocsHandler(BaseDocHandler):
     This can be used in commandline generation like so:  
     `rubberdoc generate --style docusaurus`  
     """
-    def __init__(self, file_path: str, config: RubberDocConfig):
-        super().__init__(file_path=file_path, config=config)
+    def __init__(self, file_or_path: str, config: RubberDocConfig):
+        super().__init__(file_or_path=file_or_path, config=config)
         self.__import_tabs()
     
     @classmethod
