@@ -101,14 +101,14 @@ class BaseDocHandler:
                         if isinstance(child, ast.FunctionDef):
                             self.process_node(level, child, node)
     
-    def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
+    def process_node(self, level: int, node: ast.ClassDef or ast.FunctionDef, parent=None):
         """Processes a function or class `node` into markdown and appends to doc.  
 
         This function can be overriden to determine the order of parsed elements of the node. 
 
         Args:
             level (int): level for indentation purposes  
-            node (ast.ClassDef | ast.FunctionDef): the current node to be processed 
+            node (ast.ClassDef or ast.FunctionDef): the current node to be processed 
             parent (ast.ClassDef, optional): the parent class if a function node. Defaults to None.
         """
         if parent:
@@ -125,7 +125,7 @@ class BaseDocHandler:
             source_code = self.get_node_code(node)
             self.doc.append(self.wrap_codeblock(source_code))
     
-    def get_full_docstring(self, node: ast.ClassDef | ast.FunctionDef) -> str:
+    def get_full_docstring(self, node: ast.ClassDef or ast.FunctionDef) -> str:
         """Returns the docstring of the class or function `node`.  
         
         If no docstring is found in the node, a default is returned. 
@@ -140,15 +140,15 @@ class BaseDocHandler:
             self.coverage.docstrings_found += 1
         return  docstring or self.config.output['no_docstring_default']
 
-    def get_node_code(self, node: ast.ClassDef | ast.FunctionDef) -> str:
+    def get_node_code(self, node: ast.ClassDef or ast.FunctionDef) -> str:
         """Returns the codeblock of the class or function `node`."""
         return ast.get_source_segment(self.source_code, node)
     
-    def get_parsed_docstring(self, node: ast.ClassDef | ast.FunctionDef) -> docstring_parser.Docstring:
+    def get_parsed_docstring(self, node: ast.ClassDef or ast.FunctionDef) -> docstring_parser.Docstring:
         """Parses a `node`'s docstring with `docstring_parser`.
 
         Args:
-            node (ast.ClassDef | ast.FunctionDef): Node from the `ast` tree
+            node (ast.ClassDef or ast.FunctionDef): Node from the `ast` tree
 
         Returns:
             Docstring: a docstring object 
@@ -166,18 +166,18 @@ class BaseDocHandler:
     def get_class_bases(self, node: ast.ClassDef) -> list[str]:
         return [b.id for b in node.bases]
     
-    def get_node_return_type(self, node: ast.ClassDef | ast.FunctionDef) -> str:
+    def get_node_return_type(self, node: ast.ClassDef or ast.FunctionDef) -> str:
         return node.returns.id if node.returns else ''
     
     def wrap_func_cls_lbl(self, parent_name: str) -> str:
         return parent_name + '  \n'
     
-    def wrap_func_cls_name(self, level: int, node: ast.ClassDef | ast.FunctionDef) -> str:
+    def wrap_func_cls_name(self, level: int, node: ast.ClassDef or ast.FunctionDef) -> str:
         """Wraps the function or class `node`'s name.  
 
         Args:
             level (int): The indentation level.
-            node (ast.ClassDef | ast.FunctionDef): The node for parsing.
+            node (ast.ClassDef or ast.FunctionDef): The node for parsing.
         """
         # avoid markdown collisions with dunder methods
         node_name = node.name
@@ -289,7 +289,7 @@ class MaterialMKDocsHandler(BaseDocHandler):
     def __init__(self, file_or_path: str, config: RubberDocConfig):
         super().__init__(file_or_path=file_or_path, config=config)
     
-    def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
+    def process_node(self, level: int, node: ast.ClassDef or ast.FunctionDef, parent=None):
         if parent:
             self.doc.append(self.wrap_func_cls_lbl(parent.name))
         
@@ -354,7 +354,7 @@ class DocusaurusDocsHandler(BaseDocHandler):
         self.doc.append("import Tabs from '@theme/Tabs';\n")
         self.doc.append("import TabItem from '@theme/TabItem';\n\n")
     
-    def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
+    def process_node(self, level: int, node: ast.ClassDef or ast.FunctionDef, parent=None):
         
         # function or class name
         self.doc.append('\n' + self.wrap_func_cls_name(level, node))
@@ -396,7 +396,7 @@ class DocusaurusDocsHandler(BaseDocHandler):
     
 
 
-def doc_handler_selection(config: RubberDocConfig, style: str) -> BaseDocHandler | None:
+def doc_handler_selection(config: RubberDocConfig, style: str) -> BaseDocHandler or None:
     """Determines the DocHandler to provide given a `RubberDocConfig` and `style`"""
     cust_fp = config.output['custom_doc_handler_filepath']
     cust_cls = config.output['custom_doc_handler_class_name']

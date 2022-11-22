@@ -26,7 +26,7 @@ class CustomDocHandler(BaseDocHandler):
     def __init__(self, file_or_path: str, config: RubberDocConfig):
         super().__init__(file_or_path=file_or_path, config=config)
     
-    def process_node(self, level: int, node: ast.ClassDef | ast.FunctionDef, parent=None):
+    def process_node(self, level: int, node: ast.ClassDef or ast.FunctionDef, parent=None):
         """Override the `process_node` method with our own implementation.  
         
         This will allow us to reorder how each node is displayed. A node is a class or function definition.

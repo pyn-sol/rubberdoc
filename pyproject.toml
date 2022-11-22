@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rubberdoc"
-version = "0.2.5"
+version = "0.2.6"
 description = ""
 authors = ["Mbeebe <pyn-sol@beebe.dev>"]
 readme = "README.md"
