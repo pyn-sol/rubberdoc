@@ -68,9 +68,9 @@ class BaseDocHandler:
                 self.source_code = o.read()
         else:
             self.source_code = self.file_or_path
-            tree = ast.parse(self.source_code)
-            self.__module_docstring(tree)
-            self.__walk_tree(tree)
+        tree = ast.parse(self.source_code)
+        self.__module_docstring(tree)
+        self.__walk_tree(tree)
         return ''.join(self.doc)
     
     def __module_docstring(self, tree):
