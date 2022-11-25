@@ -164,7 +164,7 @@ class BaseDocHandler:
         return [f"{a.arg}" for a in node.args.args]
     
     def get_class_bases(self, node: ast.ClassDef) -> list[str]:
-        return [b.id for b in node.bases]
+        return [b.id for b in node.bases if hasattr(b, 'id')]
     
     def get_node_return_type(self, node: ast.ClassDef or ast.FunctionDef) -> str:
         return node.returns.id if node.returns else ''
