@@ -68,10 +68,16 @@ class BaseDocHandler:
                 self.source_code = o.read()
         else:
             self.source_code = self.file_or_path
-        tree = ast.parse(self.source_code)
+        try:
+            tree = ast.parse(self.source_code)
+        except:
+            return self.ast_unparseable()
         self.__module_docstring(tree)
         self.__walk_tree(tree)
         return ''.join(self.doc)
+
+    def ast_unparseable(self):
+        return f"```\n{self.source_code}\n```"
     
     def __module_docstring(self, tree):
         """Places the module-level docstring at the top of the document.
@@ -288,6 +294,9 @@ class MaterialMKDocsHandler(BaseDocHandler):
     """
     def __init__(self, file_or_path: str, config: RubberDocConfig):
         super().__init__(file_or_path=file_or_path, config=config)
+    
+    def ast_unparseable(self):
+        return f"```py\n{self.source_code}\n```"
     
     def process_node(self, level: int, node: ast.ClassDef or ast.FunctionDef, parent=None):
         if parent:
